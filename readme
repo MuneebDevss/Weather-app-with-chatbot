@@ -1,0 +1,61 @@
+# Weather App with Chatbot 🌦️🤖
+
+This project is a weather forecast web application with chatbot integration, built using JavaScript, Tailwind CSS, and the OpenWeather API. The app fetches 5-day weather forecasts for any city, displays it in a table format, and allows users to sort, filter, and interact with the weather data. Additionally, the app features a chatbot powered by Google Generative AI to answer user queries about the weather and general interactions.
+
+## Features
+
+- **Weather Forecast**: Fetches a 5-day weather forecast for a given city from the OpenWeather API.
+- **Forecast Summary**: Displays a concise summary of the weather, including average temperature and common conditions.
+- **Sort & Filter**: Users can sort temperatures in ascending or descending order, filter by rainy days, and check for the hottest day.
+- **Pagination**: The forecast is paginated for better readability.
+- **Chatbot**: Integrated with Google Generative AI to provide answers regarding the forecast and other user queries.
+- **Error Handling**: Gracefully handles API errors and provides feedback to users when a city is not found.
+
+## Tech Stack
+
+- **Frontend**: 
+  - HTML5, Tailwind CSS for styling
+  - JavaScript for dynamic functionality
+  - Google Generative AI for chatbot interaction
+- **API**: 
+  - OpenWeather API for fetching weather forecast data
+- **Deployment**: Frontend static hosting or any web server of choice
+
+## How to Run the Project
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourusername/weather-app-with-chatbot.git
+2. **Open the project folder**:
+
+   ```bash
+   cd weather-app-with-chatbot
+
+3. **Open the index.html file in your web browser**:
+        Double-click the index.html file in the project directory to open it in your default web browser.
+        
+4. **Enter the City Name**:
+        Use the search bar to enter the city you want to get the forecast for and press "Search."
+5. **Chatbot Interaction**:
+        After viewing the weather data, enter a query in the chatbot text box for further interaction.
+
+##API Setup
+1. This project uses the OpenWeather API to fetch weather forecast data.
+2. Replace the apiKey value in the script tag with your OpenWeather API key.
+3. The chatbot is integrated using Google Generative AI. You will need to replace the Gemini_API_KEY with your own Google Generative AI key.
+
+##javascript
+const apiKey = 'your_openweather_api_key';
+const Gemini_API_KEY = 'your_google_generative_ai_key';
+
+	
+	
+##Features to Explore
+Sorting: Use the buttons to sort the temperature data in ascending or descending order.
+Filtering: Use the "Show Rainy Days" button to filter out only the rainy days.
+Chatbot: The chatbot can interact with you based on the weather data and provide quick insights or answers to your queries.
+
+##Future Enhancements
+Expand Chatbot Capabilities: Allow the chatbot to respond to more diverse weather-related questions.
+Additional Filters: Introduce more filtering options, such as sunny days or wind speed.
+Improved UI: Enhance the user interface for better mobile responsiveness and design.

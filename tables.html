@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App with Chatbot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+    
+    const apiKey = 'aac092cb6bdc6178cfe3373bca55cc4d'; 
+    let forecastData = [];
+    let rainyData = [];
+    let rainyFilter=false;
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let weatherSummary = ''; // Store weather summary here
+    let lastCity = ''; // To cache the last city searched
+    let lastResponse = null; // Cache the last successful API response
+  
+    // Fetch 5-day forecast
+    async function fetchFiveDayForecast(city) {
+      if (city === lastCity && lastResponse) {
+        // If the city is the same and we have cached data, use it
+        forecastData = lastResponse.list;
+        updateWeatherSummary();
+        displayTable(currentPage);
+        return;
+      }
+  
+      const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.cod === "200") {
+          forecastData = data.list;
+          lastCity = city; // Cache the current city
+          lastResponse = data; // Cache the response
+          updateWeatherSummary();
+          displayTable(currentPage);
+        } else {
+          // Show an error message if the city is not found
+          document.getElementById('errorMessage').innerText = `City not found: ${data.message}`;
+          forecastData = []; // Clear forecast data
+          displayTable(currentPage); // Clear the table
+        }
+      } catch (error) {
+        // Show a friendly error message for API failures
+        document.getElementById('errorMessage').innerText = 'Failed to fetch forecast data. Please try again later.';
+        console.error('Error fetching forecast data:', error);
+      }
+    }
+  
+    // Generate and store a weather summary
+    function updateWeatherSummary() {
+      if (!forecastData.length) return;
+  
+      let totalTemp = 0;
+      const conditions = {};
+  
+      // Calculate average temperature and general condition
+      forecastData.forEach(entry => {
+        totalTemp += entry.main.temp;
+        const condition = entry.weather[0].description;
+        conditions[condition] = (conditions[condition] || 0) + 1;
+      });
+  
+      const avgTemp = (totalTemp / forecastData.length).toFixed(2);
+      const mostCommonCondition = Object.keys(conditions).reduce((a, b) => conditions[a] > conditions[b] ? a : b);
+  
+      weatherSummary = `The average temperature over the next 5 days is ${avgTemp}°C, with the most common weather condition being ${mostCommonCondition}.`;
+    }
+  
+    // Display forecast table
+    
+    function displayTable(page) {
+      const tableBody = document.getElementById('tableBody');
+      tableBody.innerHTML = '';
+
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedData = forecastData.slice(startIndex, endIndex);
+
+      paginatedData.forEach(entry => {
+        const date = entry.dt_txt.split(' ')[0];
+        const temp = entry.main.temp;
+        const condition = entry.weather[0].description;
+
+        const row = `
+          <tr class="border-b">
+            <td class="py-2 px-4">${date}</td>
+            <td class="py-2 px-4">${temp}°C</td>
+            <td class="py-2 px-4">${condition}</td>
+          </tr>
+        `;
+        tableBody.innerHTML += row;
+      });
+
+      updatePaginationControls();
+    }
+    function displayRainyTable(page) {
+      const tableBody = document.getElementById('tableBody');
+      tableBody.innerHTML = '';
+
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedData = rainyData.slice(startIndex, endIndex);
+
+      paginatedData.forEach(entry => {
+        const date = entry.dt_txt.split(' ')[0];
+        const temp = entry.main.temp;
+        const condition = entry.weather[0].description;
+
+        const row = `
+          <tr class="border-b">
+            <td class="py-2 px-4">${date}</td>
+            <td class="py-2 px-4">${temp}°C</td>
+            <td class="py-2 px-4">${condition}</td>
+          </tr>
+        `;
+        tableBody.innerHTML += row;
+      });
+
+      updatePaginationControls();
+    }
+    // Update pagination buttons
+    function updatePaginationControls() {
+      const totalPages = Math.ceil(forecastData.length / itemsPerPage);
+      const paginationControls = document.getElementById('paginationControls');
+      paginationControls.innerHTML = '';
+
+      for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.innerText = i;
+        button.className = `px-4 py-2 ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200'}`;
+        button.addEventListener('click', () => {
+          currentPage = i;
+          if(!rainyFilter)
+          displayTable(currentPage);
+          else{
+            displayRainyTable(currentPage);
+          }
+        });
+        paginationControls.appendChild(button);
+      }
+    }
+  
+    // Event listener for search button
+    window.onload = function () {
+      fetchFiveDayForecast('Islamabad');
+    };
+  
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const city = document.getElementById('cityInput').value;
+      document.getElementById('errorMessage').innerText = ''; // Clear any previous error
+      fetchFiveDayForecast(city);
+    });
+  
+    // Chatbot integration
+    async function handleChatbot() {
+      
+      const Gemini_API_KEY = "AIzaSyDO90Vi1vAHTJSSv516fau7Y3SOf3Gl37g"; // A
+      const genAI = new GoogleGenerativeAI(Gemini_API_KEY);
+  
+      const model = await genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+      });
+  
+      function processResponse(t) {
+        try {
+          if (t.candidates && t.candidates.length > 0) {
+            const firstCandidate = t.candidates[0];
+            return firstCandidate.content?.parts?.map(part => part.text).join('') || '';
+          }
+          return '';
+        } catch (error) {
+          console.error("Error processing response:", error);
+          return '';
+        }
+      }
+  
+      document.getElementById('send-chat').addEventListener('click', async () => {
+        let prompt = 'This is the data:\n';
+        forecastData.forEach(entry => { 
+        const date = entry.dt_txt.split(' ')[0];
+        const temp = entry.main.temp;
+        const condition = entry.weather[0].description;
+        prompt+=`${date} ${temp}°C, ${condition}\n`;
+        });
+        prompt+=`For given data you need to give the short and concise answer only regarding this data but you can answer to greetings. This is query: ${document.getElementById('chat-input').value}`;
+  
+        // If the user requests the weather summary
+        if (prompt.toLowerCase().includes('weather')) {
+          document.getElementById('result').innerText = weatherSummary;
+        } else {
+          const result = await model.generateContent(prompt);
+          const botResponse = processResponse(result.response);
+          document.getElementById('result').innerText = botResponse;
+        }
+      });
+    }
+    //Event listener for search button
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      rainyFilter=false;
+      const city = document.getElementById('cityInput').value;
+      fetchFiveDayForecast(city);
+    });
+
+    // Sorting and filtering functions
+    document.getElementById('ascSortBtn').addEventListener('click', () => {
+      rainyFilter=false;
+      forecastData.sort((a, b) => a.main.temp - b.main.temp);
+      displayTable(currentPage);
+    });
+
+    document.getElementById('descSortBtn').addEventListener('click', () => {
+      rainyFilter=false;
+      forecastData.sort((a, b) => b.main.temp - a.main.temp);
+      displayTable(currentPage);
+    });
+
+    document.getElementById('filterRainBtn').addEventListener('click', () => {
+      const rainyData = forecastData.filter(entry => entry.weather[0].description.toLowerCase().includes('rain'));
+      rainyFilter=true;
+      displayRainyTable(currentPage);
+    });
+
+    document.getElementById('maxTempBtn').addEventListener('click', () => {
+  if (forecastData.length > 0) {
+    const hottestDay = forecastData.reduce((max, entry) => {
+      return (entry.main && entry.main.temp > max.main.temp) ? entry : max;
+    }, forecastData[0]);
+
+    if (hottestDay && hottestDay.dt_txt && hottestDay.main) {
+      alert(`The hottest day is on ${hottestDay.dt_txt.split(' ')[0]} with a temperature of ${hottestDay.main.temp}°C.`);
+    } else {
+      alert('Unable to determine the hottest day. Please try again.');
+    }
+  } else {
+    alert('No data available to determine the hottest day.');
+  }
+});
+
+    handleChatbot();
+  </script>
+  <style>
+    .picture{
+      width: 10%;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-1/4 bg-gray-800 text-white flex flex-col items-center py-10">
+      <div class="text-xl font-bold mb-8">Weather App</div>
+      <div class="w-full">
+        <ul class="space-y-6">
+          <a href="dashbaords.html" class="text-center block bg-gray-700 py-2 rounded-lg cursor-pointer">Dashboard</a>
+          <a href="tables.html" class="text-center block bg-blue-300 py-2 rounded-lg cursor-pointer">Tables</a>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+      <!-- Top Navigation -->
+      <div class="flex justify-between items-center mb-6">
+        <input id="cityInput" type="text" placeholder="Search for a city" value="Islamabad" class="px-4 py-2 w-3/4 border rounded-lg">
+        <button id="searchBtn" class="bg-blue-300 p-2 rounded-md ">Search</button>
+        <img class="rounded-full picture bg-gray-300" src="pfp2.jpg" alt="display picture">
+      </div>
+
+      <!-- Filters & Sorting -->
+      <div class="mb-4 flex space-x-4">
+        <button id="ascSortBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Sort Temperatures Ascending</button>
+        <button id="descSortBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Sort Temperatures Descending</button>
+        <button id="filterRainBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Show Rainy Days</button>
+        <button id="maxTempBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Show Hottest Day</button>
+      </div>
+
+      <!-- Table & Chatbot Section -->
+      <div class="grid grid-cols-3 gap-6">
+        <!-- Table Section -->
+        <div class="col-span-2 bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-2xl font-semibold mb-4">5-Day Weather Forecast Table</h2>
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr class="border-b">
+                <th class="py-2 px-4">Date</th>
+                <th class="py-2 px-4">Temperature</th>
+                <th class="py-2 px-4">Condition</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Rows will be dynamically added here -->
+            </tbody>
+          </table>
+          <div id="paginationControls" class="mt-4 flex justify-center space-x-2"></div>
+        </div>
+
+        <!-- Chatbot Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-medium mb-4">Chat with WeatherBot</h2>
+          <p id="result" class="rounded-lg w-full bg-gray-300 p-2">Hi how can I assist you!</p>
+          <input type="text" id="chat-input" class="border rounded-lg p-2" placeholder="Ask about the weather">
+          <button id="send-chat" class="bg-blue-300 rounded-lg p-2">Send</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+
+</html>

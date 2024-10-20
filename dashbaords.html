@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .picture{
+      width: 10%;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100">
+
+  <!-- Main Container -->
+  <div class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-1/4 bg-gray-800 text-white flex flex-col items-center py-10">
+      <div class="text-xl font-bold mb-8">Weather App</div>
+      <div class="w-full">
+        <ul class="space-y-6">
+          <a href="dashbaords.html" class="text-center block  bg-blue-300 py-2 rounded-lg cursor-pointer">Dashboard</a>
+          <a href="tables.html" class="text-center block bg-gray-700 py-2 rounded-lg cursor-pointer">Tables</a>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+      <!-- Top Navigation -->
+      <div class="flex justify-between items-center mb-6">
+        <input id="cityInput" type="text" placeholder="Search for a city" value="Islamabad" class="px-4 py-2 w-3/4 border rounded-lg">
+        <button id="searchBtn" class="bg-blue-300 p-2 rounded-md ">Search</button>
+        <img class="rounded-full picture bg-gray-300" src="pfp2.jpg" alt="display picture">
+      </div>
+
+      <!-- Weather Data & Charts -->
+      <div class="grid grid-cols-2 gap-6">
+
+        <!-- Weather Data Section -->
+        <div id="weatherWidget" class="col-span-2 bg-white p-6 rounded-lg shadow-md">
+          <h2 class="text-2xl font-semibold mb-4">Weather Data Based on City</h2>
+          <div id="weatherInfo" class="text-lg"></div>
+          <img id="weatherIcon" src="" alt="Weather Icon">
+        </div>
+
+        <!-- Vertical Bar Chart -->
+        <div class="bg-white p-4 rounded-lg shadow-md text-center">
+          <h3 class="text-xl font-medium mb-2">Vertical Bar Chart</h3>
+          <canvas id="barChart"></canvas>
+        </div>
+
+        <!-- Doughnut Chart -->
+        <div class="bg-white p-4 rounded-lg shadow-md text-center">
+          <h3 class="text-xl font-medium mb-2">Doughnut Chart</h3>
+          <canvas id="doughnutChart"></canvas>
+        </div>
+
+        <!-- Line Chart -->
+        <div class="bg-white p-4 rounded-lg shadow-md text-center">
+          <h3 class="text-xl font-medium mb-2">Line Chart</h3>
+          <canvas id="lineChart"></canvas>
+        </div>
+
+        <!-- 5-Day Forecast Section -->
+        <div id="forecastGrid" class="col-span-2 grid grid-cols-5 gap-4 bg-white p-6 rounded-lg shadow-md">
+          <h3 class="text-xl font-medium mb-4 col-span-5 text-center">5-Day Weather Forecast</h3>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const apiKey = 'aac092cb6bdc6178cfe3373bca55cc4d'; 
+    
+let previousCity = '';
+
+let barChartInstance, doughnutChartInstance, lineChartInstance;
+
+// Fetch weather for Islamabad as the default city on page load
+window.onload = function () {
+  fetchWeatherData('Islamabad');
+};
+
+document.getElementById('searchBtn').addEventListener('click', () => {
+  const city = document.getElementById('cityInput').value.trim();
+  
+  // Only make API calls if the city has changed
+  if (city && city !== previousCity) {
+    fetchWeatherData(city);
+    previousCity = city; // Update previousCity to the new input
+  }
+});
+
+async function fetchWeatherData(city) {
+  try {
+    await fetchCurrentWeather(city);
+    await fetchFiveDayForecast(city);
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
+    displayErrorMessage("Failed to fetch weather data. Please try again.");
+  }
+}
+
+async function fetchCurrentWeather(city) {
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.cod === 200) {
+      // Display the weather data
+      const weatherInfo = `
+        City: ${data.name}, ${data.sys.country}<br>
+        Temperature: ${data.main.temp}°C<br>
+        Condition: ${data.weather[0].description}<br>
+        Humidity: ${data.main.humidity}%<br>
+        Wind Speed: ${data.wind.speed} m/s
+      `;
+      document.getElementById('weatherInfo').innerHTML = weatherInfo;
+
+      const iconCode = data.weather[0].icon;
+      document.getElementById('weatherIcon').src = `http://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+      updateBackgroundBasedOnWeather(data.weather[0].main);
+    } else {
+      throw new Error(data.message); // Handle city not found
+    }
+  } catch (error) {
+    console.error('Error fetching current weather data:', error);
+    displayErrorMessage("City not found. Please enter a valid city.");
+  }
+}
+  
+    async function fetchFiveDayForecast(city) {
+  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.cod === "200") {
+      const temps = [];
+      const dates = [];
+      const weatherConditions = {};
+
+      data.list.forEach((entry, index) => {
+        if (index % 8 === 0) { // 8 intervals for a full day
+          temps.push(entry.main.temp);
+          dates.push(entry.dt_txt.split(' ')[0]); // Only get the date part
+
+          const condition = entry.weather[0].main;
+          weatherConditions[condition] = (weatherConditions[condition] || 0) + 1;
+        }
+      });
+
+      updateCharts(temps, dates, weatherConditions);
+      displayFiveDayForecast(data.list);
+    } else {
+      throw new Error(data.message); // Handle API errors
+    }
+  } catch (error) {
+    console.error('Error fetching forecast data:', error);
+    displayErrorMessage("Failed to retrieve forecast data. Please try again.");
+  }
+}
+
+function displayErrorMessage(message) {
+  document.getElementById('weatherInfo').innerHTML = `<span style="color:red;">${message}</span>`;
+  document.getElementById('weatherIcon').src = '';
+}
+  
+    
+function updateBackgroundBasedOnWeather(condition) {
+  const weatherWidget = document.getElementById('weatherWidget');
+  weatherWidget.className = 'col-span-2 bg-white p-6 rounded-lg shadow-md'; // Reset background
+  if (condition.includes('Clouds')) {
+    weatherWidget.classList.add('bg-gray-300');
+  } else if (condition.includes('Clear')) {
+    weatherWidget.classList.add('bg-blue-300');
+  } else if (condition.includes('Rain')) {
+    weatherWidget.classList.add('bg-gray-600');
+  } else {
+    weatherWidget.classList.add('bg-gray-100');
+  }
+}
+  
+    function updateCharts(temps, dates, weatherConditions) {
+      const barCtx = document.getElementById('barChart').getContext('2d');
+      const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+      const lineCtx = document.getElementById('lineChart').getContext('2d');
+  
+      // Clear any existing charts before creating new ones
+      if (barChartInstance) barChartInstance.destroy();
+      if (doughnutChartInstance) doughnutChartInstance.destroy();
+      if (lineChartInstance) lineChartInstance.destroy();
+  
+      // Vertical Bar Chart
+      barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: temps,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          }]
+        },
+        options: {
+          animation: {
+            delay: 1000,
+          }
+        }
+      });
+  
+      // Doughnut Chart
+      doughnutChartInstance = new Chart(doughnutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(weatherConditions),
+          datasets: [{
+            data: Object.values(weatherConditions),
+            backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(153, 102, 255, 0.6)'],
+          }]
+        },
+        options: {
+          animation: {
+            delay: 1500,
+          }
+        }
+      });
+  
+      // Line Chart
+      lineChartInstance = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: temps,
+            fill: false,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          animation: {
+            duration: 2000,
+            easing: 'easeInBounce',
+            onProgress(animation) {
+              const chartInstance = animation.chart;
+              chartInstance.ctx.clearRect(0, 0, chartInstance.width, chartInstance.height);
+              chartInstance.draw();
+            }
+          }
+        }
+      });
+    }
+  
+    function displayFiveDayForecast(forecastData) {
+      const forecastGrid = document.getElementById('forecastGrid');
+      forecastGrid.innerHTML = `<h3 class="text-xl font-medium mb-4 col-span-5 text-center">5-Day Weather Forecast</h3>`;
+  
+      // Clear any existing forecast data
+      forecastGrid.innerHTML = ''; 
+  
+      // Only select one forecast per day (skip every 8 data points)
+      forecastData.forEach((entry, index) => {
+        if (index % 8 === 0) {
+          const date = entry.dt_txt.split(' ')[0];
+          const temp = entry.main.temp;
+          const condition = entry.weather[0].description;
+          const iconCode = entry.weather[0].icon;
+  
+          const forecastCard = `
+            <div class="text-center">
+              <div>${date}</div>
+              <img src="http://openweathermap.org/img/wn/${iconCode}@2x.png" alt="Weather Icon">
+              <div>Temp: ${temp}°C</div>
+              <div>${condition}</div>
+            </div>
+          `;
+  
+          forecastGrid.innerHTML += forecastCard;
+        }
+      });
+    }
+  </script>
+  
+
+</body>
+
+</html>
