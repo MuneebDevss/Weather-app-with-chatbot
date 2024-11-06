@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weather App with Chatbot</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <script type="module">
     import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
@@ -254,39 +255,40 @@
 </head>
 
 <body class="bg-gray-100">
-  <div class="flex min-h-screen">
+  <div class="flex min-h-screen animate__animated animate__fadeIn">
+
     <!-- Sidebar -->
-    <aside class="w-1/4 bg-gray-800 text-white flex flex-col items-center py-10">
+    <aside class="w-1/4 bg-gray-800 text-white flex flex-col items-center py-10 animate__animated animate__slideInLeft">
       <div class="text-xl font-bold mb-8">Weather App</div>
       <div class="w-full">
         <ul class="space-y-6">
-          <a href="index.html" class="text-center block bg-gray-700 py-2 rounded-lg cursor-pointer">Dashboard</a>
-          <a href="tables.html" class="text-center block bg-blue-300 py-2 rounded-lg cursor-pointer">Tables</a>
+          <a href="index.html" class="text-center block bg-gray-700 py-2 rounded-lg cursor-pointer transition duration-300 transform hover:scale-105">Dashboard</a>
+          <a href="tables.html" class="text-center block bg-blue-300 py-2 rounded-lg cursor-pointer transition duration-300 transform hover:scale-105">Tables</a>
         </ul>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-6">
+    <main class="flex-1 p-6 animate__animated animate__fadeInRight">
       <!-- Top Navigation -->
       <div class="flex justify-between items-center mb-6">
-        <input id="cityInput" type="text" placeholder="Search for a city" value="Islamabad" class="px-4 py-2 w-3/4 border rounded-lg">
-        <button id="searchBtn" class="bg-blue-300 p-2 rounded-md ">Search</button>
-        <img class="rounded-full picture bg-gray-300" src="pfp2.jpg" alt="display picture">
+        <input id="cityInput" type="text" placeholder="Search for a city" value="Islamabad" class="px-4 py-2 w-3/4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-300">
+        <button id="searchBtn" class="bg-blue-300 p-2 rounded-md transition duration-300 transform hover:scale-105">Search</button>
+        <img class="rounded-full picture bg-gray-300 transition duration-300 transform hover:scale-105" src="pfp2.jpg" alt="display picture">
       </div>
 
       <!-- Filters & Sorting -->
       <div class="mb-4 flex space-x-4">
-        <button id="ascSortBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Sort Temperatures Ascending</button>
-        <button id="descSortBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Sort Temperatures Descending</button>
-        <button id="filterRainBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Show Rainy Days</button>
-        <button id="maxTempBtn" class="bg-gray-300 px-4 py-2 rounded-lg">Show Hottest Day</button>
+        <button id="ascSortBtn" class="bg-gray-300 px-4 py-2 rounded-lg transition duration-300 transform hover:scale-105">Sort Temperatures Ascending</button>
+        <button id="descSortBtn" class="bg-gray-300 px-4 py-2 rounded-lg transition duration-300 transform hover:scale-105">Sort Temperatures Descending</button>
+        <button id="filterRainBtn" class="bg-gray-300 px-4 py-2 rounded-lg transition duration-300 transform hover:scale-105">Show Rainy Days</button>
+        <button id="maxTempBtn" class="bg-gray-300 px-4 py-2 rounded-lg transition duration-300 transform hover:scale-105">Show Hottest Day</button>
       </div>
 
       <!-- Table & Chatbot Section -->
       <div class="grid grid-cols-3 gap-6">
         <!-- Table Section -->
-        <div class="col-span-2 bg-white p-6 rounded-lg shadow-md">
+        <div class="col-span-2 bg-white p-6 rounded-lg shadow-md animate__animated animate__fadeInUp">
           <h2 class="text-2xl font-semibold mb-4">5-Day Weather Forecast Table</h2>
           <table class="min-w-full bg-white border border-gray-200">
             <thead>
@@ -296,7 +298,7 @@
                 <th class="py-2 px-4">Condition</th>
               </tr>
             </thead>
-            <tbody id="tableBody">
+            <tbody id="tableBody" class="animate__animated animate__fadeIn">
               <!-- Rows will be dynamically added here -->
             </tbody>
           </table>
@@ -304,16 +306,17 @@
         </div>
 
         <!-- Chatbot Section -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="bg-white p-6 rounded-lg shadow-md animate__animated animate__fadeInUp">
           <h2 class="text-xl font-medium mb-4">Chat with WeatherBot</h2>
-          <p id="result" class="rounded-lg w-full bg-gray-300 p-2">Hi how can I assist you!</p>
-          <input type="text" id="chat-input" class="border rounded-lg p-2" placeholder="Ask about the weather">
-          <button id="send-chat" class="bg-blue-300 rounded-lg p-2">Send</button>
+          <p id="result" class="rounded-lg w-full bg-gray-300 p-2">Hi, how can I assist you!</p>
+          <input type="text" id="chat-input" class="border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-300" placeholder="Ask about the weather">
+          <button id="send-chat" class="bg-blue-300 rounded-lg p-2 transition duration-300 transform hover:scale-105">Send</button>
         </div>
       </div>
     </main>
   </div>
 </body>
+
 
 
 </html>
